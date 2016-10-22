@@ -1,14 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using NUnit.Framework;
+using System.Linq;
+
 
 namespace TagsCloudVisualization
 {
     public class CircularCloudLayouter
     {
-        public const int Width = 100;
-        public const int Height = 100;
+        public readonly int Width = 100;
+        public readonly int Height = 100;
 
         public readonly Point CenterPoint;
 
@@ -22,29 +23,139 @@ namespace TagsCloudVisualization
             CenterPoint = center;
         }
 
-        public Rectangle PutNextRectangle(Size rectangleSize)
+        public CircularCloudLayouter(Point center, int width, int height)
         {
-            var rectangle = new Rectangle(CenterPoint, rectangleSize);
-            Rectangles.Add(rectangle);
-            return rectangle;
+            Width = width;
+            Height = height;
+            Rectangles = new List<Rectangle>();
+            if (center.X < 0 || center.Y < 0 || center.X > Width || center.Y > Height) throw new ArgumentException();
+            CenterPoint = center;
         }
 
-        public void CreateSpiral(double densityOfSpirals, double deltaInDegrees, double numberOfSpirals, Point center)
+        public Rectangle PutNextRectangle(Size rectangleSize)
         {
-            double angleInDegrees = 0; 
-            Spiral.Add(new Point(center.X, center.Y));
+            if (Rectangles.Count == 0)
+            {
+                var rectangleCenter = new Point(rectangleSize.Width/2, rectangleSize.Height/2);
+                var rectangleLocation = new Point(CenterPoint.X - rectangleCenter.X, CenterPoint.Y - rectangleCenter.Y);
+                var firstRectangle = new Rectangle(rectangleLocation, rectangleSize);
+                Rectangles.Add(firstRectangle);
 
-            while (angleInDegrees <= (numberOfSpirals*360))
+                DeletePointsInsideRectangle(firstRectangle);
+
+                return firstRectangle;
+            }
+            
+            foreach (var point in Spiral)
+            {
+                var curentRectangle = new Rectangle(point, rectangleSize);
+                if (IsPossiblePutRectangle(curentRectangle))
+                {
+                    Rectangles.Add(curentRectangle);
+                    DeletePointsInsideRectangle(curentRectangle);
+                    return curentRectangle;
+                }
+            }
+            throw new Exception("не удалось расположить прямоугольник");
+        }
+
+
+        public void CreateSpiral(double densityOfSpirals = 0.001, double deltaInDegrees = 10)
+        {
+            Spiral.Add(CenterPoint);
+
+            double angleInDegrees = 0;
+            var deltaFromDensity = densityOfSpirals*0.1;
+            var maxRadius = GetMaxRadius();
+            var radius = angleInDegrees*densityOfSpirals;
+
+            while (radius <= maxRadius)
             {
                 angleInDegrees += deltaInDegrees;
-                var radius = angleInDegrees*densityOfSpirals;
+                densityOfSpirals += deltaFromDensity;
+
+                radius = angleInDegrees*densityOfSpirals;
 
                 //Получаем новые значения координат точки в декартовой системе координат:
-                var x = (radius*Math.Cos(angleInDegrees/180*Math.PI)) + center.X;
-                var y = (radius*Math.Sin(angleInDegrees/180*Math.PI)) + center.Y;
+                var x = (int) Math.Round(radius*Math.Cos(angleInDegrees/180*Math.PI)) + CenterPoint.X;
+                var y = (int) Math.Round(radius*Math.Sin(angleInDegrees/180*Math.PI)) + CenterPoint.Y;
 
-                Spiral.Add(new Point((int) x, (int) y));
+                var nextPoint = new Point(x, y);
+                if (IsIncorrectPoint(nextPoint))
+                {
+                    continue;
+                }
+                Spiral.Add(nextPoint);
             }
+        }
+
+        private double GetMaxRadius()
+        {
+            var upperLeftCorner = new Point(0, 0);
+            var lowerLeftCorner = new Point(0, Height);
+            var upperRightCorner = new Point(Width, 0);
+            var lowerRightCorner = new Point(Width, Height);
+
+            return
+                Math.Max(
+                    Math.Max(GetDistanceBetweenPoints(CenterPoint, upperLeftCorner),
+                        GetDistanceBetweenPoints(CenterPoint, upperRightCorner)),
+                    Math.Max(GetDistanceBetweenPoints(CenterPoint, lowerLeftCorner),
+                        GetDistanceBetweenPoints(CenterPoint, lowerRightCorner)));
+        }
+
+        private double GetDistanceBetweenPoints(Point a, Point b)
+        {
+            return Math.Sqrt(Math.Pow(b.X - a.X, 2) + Math.Pow(b.Y - a.Y, 2));
+        }
+
+        private bool IsIncorrectPoint(Point point)
+        {
+            return point.X < 0 || point.Y < 0 || point.X > Width || point.Y > Height;
+        }
+
+        private void DeletePointsInsideRectangle(Rectangle rectangle)
+        {
+            var upperLeftPoint = rectangle.Location;
+            var lowerRightPoint = new Point(upperLeftPoint.X + rectangle.X, upperLeftPoint.Y + rectangle.Height);
+            Spiral = Spiral.Where(point => !IsPointInsideRectangle(point, upperLeftPoint, lowerRightPoint)).ToList();
+        }
+
+        private bool IsPointInsideRectangle(Point point, Point upperLeftPoint, Point lowerRightPoint)
+        {
+            return point.X >= upperLeftPoint.X && point.X <= lowerRightPoint.X && point.Y >= upperLeftPoint.Y &&
+                   point.Y <= lowerRightPoint.Y;
+        }
+
+        private bool IsPossiblePutRectangle(Rectangle currentRectangle)
+        {
+            foreach (var existingRectangle in Rectangles)
+            {
+                if (IsRectanglesIntersect(currentRectangle, existingRectangle))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public static bool IsRectanglesIntersect(Rectangle r1, Rectangle r2)
+        {
+            var intersect = Rectangle.Intersect(r1, r2);
+            return !(intersect.Width==0 && intersect.Height==0);
+        }
+
+        
+        public void CreateBitmap()
+        {
+            Bitmap bitmap = new Bitmap(Width, Height);
+            Graphics graphics = Graphics.FromImage(bitmap);
+            foreach (var rectangle in Rectangles)
+            {
+                graphics.FillRectangle(Brushes.Blue, rectangle);
+            }
+            bitmap.Save(@"C:\Users\Максим\Desktop\1.bmp");
+            
         }
     }
 }
