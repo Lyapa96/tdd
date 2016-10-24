@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 
 namespace TagsCloudVisualization
@@ -19,7 +20,7 @@ namespace TagsCloudVisualization
         public CircularCloudLayouter(Point center)
         {
             Rectangles = new List<Rectangle>();
-            if (center.X < 0 || center.Y < 0 || center.X > Width || center.Y > Height) throw new ArgumentException();
+            if (IsIncorrectPoint(center)) throw new ArgumentException();
             CenterPoint = center;
         }
 
@@ -28,7 +29,7 @@ namespace TagsCloudVisualization
             Width = width;
             Height = height;
             Rectangles = new List<Rectangle>();
-            if (center.X < 0 || center.Y < 0 || center.X > Width || center.Y > Height) throw new ArgumentException();
+            if (IsIncorrectPoint(center)) throw new ArgumentException();
             CenterPoint = center;
         }
 
@@ -36,6 +37,7 @@ namespace TagsCloudVisualization
         {
             if (Rectangles.Count == 0)
             {
+                if(rectangleSize.Width>Width || rectangleSize.Height>Height) throw new RectangleIsNotPlacedException();
                 var rectangleCenter = new Point(rectangleSize.Width/2, rectangleSize.Height/2);
                 var rectangleLocation = new Point(CenterPoint.X - rectangleCenter.X, CenterPoint.Y - rectangleCenter.Y);
                 var firstRectangle = new Rectangle(rectangleLocation, rectangleSize);
@@ -49,16 +51,15 @@ namespace TagsCloudVisualization
             foreach (var point in Spiral)
             {
                 var curentRectangle = new Rectangle(point, rectangleSize);
-                if (IsPossiblePutRectangle(curentRectangle))
+                if (IsPossiblePutRectangle(curentRectangle) && IsRectangleInsideCloud(curentRectangle))
                 {
                     Rectangles.Add(curentRectangle);
                     DeletePointsInsideRectangle(curentRectangle);
                     return curentRectangle;
                 }
             }
-            throw new Exception("не удалось расположить прямоугольник");
+            throw new RectangleIsNotPlacedException();
         }
-
 
         public void CreateSpiral(double densityOfSpirals = 0.001, double deltaInDegrees = 10)
         {
@@ -141,12 +142,18 @@ namespace TagsCloudVisualization
 
         public static bool IsRectanglesIntersect(Rectangle r1, Rectangle r2)
         {
-            var intersect = Rectangle.Intersect(r1, r2);
-            return !(intersect.Width==0 && intersect.Height==0);
+            var intersection = Rectangle.Intersect(r1, r2);
+            return !(intersection.Width==0 && intersection.Height==0);
         }
 
-        
-        public void CreateBitmap()
+        public bool IsRectangleInsideCloud(Rectangle rectangle)
+        {
+            var intersection = Rectangle.Intersect(rectangle, new Rectangle(0, 0, Width, Height));
+            return intersection.Width == rectangle.Width && rectangle.Height == intersection.Height;
+        }
+
+
+        public void CreateBitmap(string path)
         {
             Bitmap bitmap = new Bitmap(Width, Height);
             Graphics graphics = Graphics.FromImage(bitmap);
@@ -154,8 +161,8 @@ namespace TagsCloudVisualization
             {
                 graphics.FillRectangle(Brushes.Blue, rectangle);
             }
-            bitmap.Save(@"C:\Users\Максим\Desktop\1.bmp");
-            
+            bitmap.Save(path);          
+            //bitmap.Save(@"C:\Users\Максим\Desktop\ШПоРА\Практика\01.TDD\tdd\TagsCloudVisualization\bin\Debug\1.b");          
         }
     }
 }
