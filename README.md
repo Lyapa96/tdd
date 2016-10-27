@@ -1,7 +1,3 @@
-# TDD
-
-## Самостоятельная подготовка
-Отсутствует.
-
-## Самостоятельное закрепления материала
-Какую-нибудь практическую задачу выполнить в стиле TDD, чтобы на следующей встрече обсудить впечатления.
+﻿![1 картинка](https://github.com/Lyapa96/tdd/blob/master/TagsCloudVisualization/Images/1.bmp)
+![2 картинка](https://github.com/Lyapa96/tdd/blob/master/TagsCloudVisualization/Images/2.bmp)
+![3 картинка](https://github.com/Lyapa96/tdd/blob/master/TagsCloudVisualization/Images/3.bmp)
