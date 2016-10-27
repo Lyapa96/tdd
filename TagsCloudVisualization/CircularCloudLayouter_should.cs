@@ -1,12 +1,16 @@
 ﻿using System;
 using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
 using System.Windows.Forms;
 using NUnit.Framework;
 using FluentAssertions;
+using NUnit.Framework.Interfaces;
 
 
 namespace TagsCloudVisualization
 {
+    [TestFixture]
     public class CircularCloudLayouter_should
     {
         private Point centerPoint;
@@ -155,7 +159,7 @@ namespace TagsCloudVisualization
 
 
 
-        [Test]
+        [Test,Explicit]
         public void DrawRectangles()
         {
             var height = 300;
@@ -170,6 +174,41 @@ namespace TagsCloudVisualization
             }
 
             Application.Run(vis);
+        }
+
+        [Test]
+        public void addThreeBigRect()
+        {
+            cloud.CreateSpiral();
+            cloud.PutNextRectangle(new Size(50, 50));
+            cloud.PutNextRectangle(new Size(20, 20));
+            cloud.PutNextRectangle(new Size(50, 50));
+
+            cloud.Rectangles.Should().HaveCount(3);
+        }
+
+        [Test]
+        public void addHundredRectangles()
+        {
+            cloud.CreateSpiral();
+            for (int i = 0; i < 100; i++)
+            {
+                cloud.PutNextRectangle(new Size(10, 5));
+            }
+
+            cloud.Rectangles.Should().HaveCount(100);
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            if (TestContext.CurrentContext.Result.Outcome.Status == TestStatus.Failed)
+            {
+                var fileName = TestContext.CurrentContext.Test.Name + ".bmp";
+                var path = Path.Combine(TestContext.CurrentContext.TestDirectory, fileName);
+                cloud.CreateBitmap(path);
+                Console.WriteLine($"bitmap saved to {path}");
+            }
         }
     }
 }
