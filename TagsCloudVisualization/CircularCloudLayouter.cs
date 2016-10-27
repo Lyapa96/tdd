@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
-using System.Runtime.CompilerServices;
+
 
 
 namespace TagsCloudVisualization
@@ -15,8 +14,8 @@ namespace TagsCloudVisualization
         public readonly Point CenterPoint;
 
         public List<Rectangle> Rectangles { get; set; }
-        public List<Point> Spiral = new List<Point>();
 
+        public Spiral Spiral;
         public CircularCloudLayouter(Point center)
         {
             Rectangles = new List<Rectangle>();
@@ -35,79 +34,88 @@ namespace TagsCloudVisualization
 
         public Rectangle PutNextRectangle(Size rectangleSize)
         {
+            if (rectangleSize.Width > Width || rectangleSize.Height > Height) throw new RectangleIsNotPlacedException();
             if (Rectangles.Count == 0)
-            {
-                if(rectangleSize.Width>Width || rectangleSize.Height>Height) throw new RectangleIsNotPlacedException();
+            {               
                 var rectangleCenter = new Point(rectangleSize.Width/2, rectangleSize.Height/2);
                 var rectangleLocation = new Point(CenterPoint.X - rectangleCenter.X, CenterPoint.Y - rectangleCenter.Y);
                 var firstRectangle = new Rectangle(rectangleLocation, rectangleSize);
                 Rectangles.Add(firstRectangle);
 
-                DeletePointsInsideRectangle(firstRectangle);
-
                 return firstRectangle;
             }
-            
-            foreach (var point in Spiral)
+            while (true)
             {
-                var curentRectangle = new Rectangle(point, rectangleSize);
-                if (IsPossiblePutRectangle(curentRectangle) && IsRectangleInsideCloud(curentRectangle))
+                try
                 {
-                    Rectangles.Add(curentRectangle);
-                    DeletePointsInsideRectangle(curentRectangle);
-                    return curentRectangle;
+                    var nextPoint = Spiral.GetNextPoint();
+                    if (IsIncorrectPoint(nextPoint))
+                    {
+                        continue;                       
+                    }
+                    var currentRectangle = new Rectangle(nextPoint, rectangleSize);
+                    if (IsPossiblePutRectangle(currentRectangle) && IsRectangleInsideCloud(currentRectangle))
+                    {
+                        currentRectangle = ShiftRectangleToCenter(currentRectangle);
+                        Rectangles.Add(currentRectangle);
+                        return currentRectangle;
+                    }
+                }
+                catch (SpiralException exception)
+                {
+                    throw new RectangleIsNotPlacedException(exception.Message);
                 }
             }
-            throw new RectangleIsNotPlacedException();
         }
 
-        public void CreateSpiral(double densityOfSpirals = 0.001, double deltaInDegrees = 10)
+
+        private Rectangle ShiftRectangleToCenter(Rectangle currentRectangle)
         {
-            Spiral.Add(CenterPoint);
+            currentRectangle = ShiftOnX(currentRectangle);
+            currentRectangle = ShiftOnY(currentRectangle);
+            return currentRectangle;
+        }
 
-            double angleInDegrees = 0;
-            var deltaFromDensity = densityOfSpirals*0.1;
-            var maxRadius = GetMaxRadius();
-            var radius = angleInDegrees*densityOfSpirals;
-
-            while (radius <= maxRadius)
+        private Rectangle ShiftOnX(Rectangle rectangle)
+        {
+            if (rectangle.X > CenterPoint.X)
             {
-                angleInDegrees += deltaInDegrees;
-                densityOfSpirals += deltaFromDensity;
-
-                radius = angleInDegrees*densityOfSpirals;
-
-                //Получаем новые значения координат точки в декартовой системе координат:
-                var x = (int) Math.Round(radius*Math.Cos(angleInDegrees/180*Math.PI)) + CenterPoint.X;
-                var y = (int) Math.Round(radius*Math.Sin(angleInDegrees/180*Math.PI)) + CenterPoint.Y;
-
-                var nextPoint = new Point(x, y);
-                if (IsIncorrectPoint(nextPoint))
+                while (IsPossiblePutRectangle(rectangle) && rectangle.X > CenterPoint.X) //можно прилижать
                 {
-                    continue;
+                    rectangle.X = rectangle.X - 1;
                 }
-                Spiral.Add(nextPoint);
+                rectangle.X = rectangle.X + 1;
+                return rectangle;
             }
+            while (IsPossiblePutRectangle(rectangle) && rectangle.X < CenterPoint.X) //можно прилижать
+            {
+                rectangle.X = rectangle.X + 1;
+            }
+            rectangle.X = rectangle.X - 1;
+            return rectangle;
+        }
+        private Rectangle ShiftOnY(Rectangle rectangle)
+        {
+            if (rectangle.Y > CenterPoint.Y)
+            {
+                while (IsPossiblePutRectangle(rectangle) && rectangle.Y > CenterPoint.Y) //можно прилижать
+                {
+                    rectangle.Y = rectangle.Y - 1;
+                }
+                rectangle.Y = rectangle.Y + 1;
+                return rectangle;
+            }
+            while (IsPossiblePutRectangle(rectangle) && rectangle.Y < CenterPoint.Y) //можно прилижать
+            {
+                rectangle.Y = rectangle.Y + 1;
+            }
+            rectangle.Y = rectangle.Y - 1;
+            return rectangle;
         }
 
-        private double GetMaxRadius()
+        public void CreateSpiral(double densityOfSpiral = 0.001, double deltaInDegrees = 10)
         {
-            var upperLeftCorner = new Point(0, 0);
-            var lowerLeftCorner = new Point(0, Height);
-            var upperRightCorner = new Point(Width, 0);
-            var lowerRightCorner = new Point(Width, Height);
-
-            return
-                Math.Max(
-                    Math.Max(GetDistanceBetweenPoints(CenterPoint, upperLeftCorner),
-                        GetDistanceBetweenPoints(CenterPoint, upperRightCorner)),
-                    Math.Max(GetDistanceBetweenPoints(CenterPoint, lowerLeftCorner),
-                        GetDistanceBetweenPoints(CenterPoint, lowerRightCorner)));
-        }
-
-        private double GetDistanceBetweenPoints(Point a, Point b)
-        {
-            return Math.Sqrt(Math.Pow(b.X - a.X, 2) + Math.Pow(b.Y - a.Y, 2));
+            Spiral = new Spiral(this, densityOfSpiral, deltaInDegrees);
         }
 
         private bool IsIncorrectPoint(Point point)
@@ -115,18 +123,6 @@ namespace TagsCloudVisualization
             return point.X < 0 || point.Y < 0 || point.X > Width || point.Y > Height;
         }
 
-        private void DeletePointsInsideRectangle(Rectangle rectangle)
-        {
-            var upperLeftPoint = rectangle.Location;
-            var lowerRightPoint = new Point(upperLeftPoint.X + rectangle.X, upperLeftPoint.Y + rectangle.Height);
-            Spiral = Spiral.Where(point => !IsPointInsideRectangle(point, upperLeftPoint, lowerRightPoint)).ToList();
-        }
-
-        private bool IsPointInsideRectangle(Point point, Point upperLeftPoint, Point lowerRightPoint)
-        {
-            return point.X >= upperLeftPoint.X && point.X <= lowerRightPoint.X && point.Y >= upperLeftPoint.Y &&
-                   point.Y <= lowerRightPoint.Y;
-        }
 
         private bool IsPossiblePutRectangle(Rectangle currentRectangle)
         {
@@ -161,8 +157,7 @@ namespace TagsCloudVisualization
             {
                 graphics.FillRectangle(Brushes.Blue, rectangle);
             }
-            bitmap.Save(path);          
-            //bitmap.Save(@"C:\Users\Максим\Desktop\ШПоРА\Практика\01.TDD\tdd\TagsCloudVisualization\bin\Debug\1.b");          
+            bitmap.Save(path);                               
         }
     }
 }

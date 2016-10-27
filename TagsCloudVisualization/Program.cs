@@ -1,9 +1,8 @@
-﻿
-
-using System.Drawing;
+﻿using System.Drawing;
 using System.IO;
-using System.Net.Mime;
+
 using System.Reflection;
+using System.Windows.Forms.VisualStyles;
 
 namespace TagsCloudVisualization
 {
@@ -12,11 +11,13 @@ namespace TagsCloudVisualization
         static void Main(string[] args)
         {
             var path = Assembly.GetExecutingAssembly().Location;
-            var applicationDirectory = Path.GetDirectoryName(path);
+            var tagsCloudsVisualization = Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(path)));
 
-            CreateSimpleCloud(applicationDirectory, "1.bmp");
-            CreateCloudWhithSmallRectangles(applicationDirectory,"2.bmp");
-            CreateCloudWithFiveSimilarRectangles(applicationDirectory, "3.bmp");
+            var imagesDirectory = Path.Combine(tagsCloudsVisualization,"Images");
+
+            CreateSimpleCloud(imagesDirectory, "1.bmp");
+            CreateCloudWhithSmallRectangles(imagesDirectory,"2.bmp");
+            CreateCloudWithFiveSimilarRectangles(imagesDirectory, "3.bmp");
 
         }
 
@@ -54,9 +55,9 @@ namespace TagsCloudVisualization
             var width = 500;
             var center = new Point(width / 2, height / 2);
             var cloud = new CircularCloudLayouter(center, width, height);
-            cloud.CreateSpiral();
+            cloud.CreateSpiral(0.00001, 1);
 
-            for (int i = 0; i < 200; i++)
+            for (int i = 0; i < 400; i++)
             {
                 cloud.PutNextRectangle(new Size(5,2));
             }
