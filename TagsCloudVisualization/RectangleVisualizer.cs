@@ -10,7 +10,7 @@ namespace TagsCloudVisualization
         {
             Width = width;
             Height = height;
-            Cloud = new CircularCloudLayouter(new Point(ClientSize.Width/ 2, ClientSize.Height/ 2), ClientSize.Width,ClientSize.Height);
+            Cloud = new CircularCloudLayouter(new Point(ClientSize.Width/ 2, ClientSize.Height/ 2), ClientSize.Width,ClientSize.Height,0.00001,1);
 
         }
 

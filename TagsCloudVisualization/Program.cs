@@ -27,7 +27,7 @@ namespace TagsCloudVisualization
             var width = 600;
             var center = new Point(width / 2, height / 2);
             var cloud = new CircularCloudLayouter(center, width, height);
-            cloud.CreateSpiral();
+
 
             for (int i = 0; i < 3; i++)
             {
@@ -53,8 +53,8 @@ namespace TagsCloudVisualization
             var height = 500;
             var width = 500;
             var center = new Point(width / 2, height / 2);
-            var cloud = new CircularCloudLayouter(center, width, height);
-            cloud.CreateSpiral(0.00001, 1);
+            var cloud = new CircularCloudLayouter(center, width, height, 0.00001, 1);
+
 
             for (int i = 0; i < 400; i++)
             {
@@ -72,7 +72,6 @@ namespace TagsCloudVisualization
             var width = 300;
             var center = new Point(width / 2, height / 2);
             var cloud = new CircularCloudLayouter(center, width, height);
-            cloud.CreateSpiral();
 
             for (int i = 0; i < 5; i++)
             {

@@ -1,18 +1,18 @@
-﻿
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using FluentAssertions;
 using NUnit.Framework;
 
-namespace TagsCloudVisualization
+namespace TagsCloudVisualization.Tests
 {
     public class Spiral_should
     {
         [Test]
         public void throwException_IfRectangleCannotBePutOnCloud()
         {
-            var spiral = new Spiral(new Point(2,2), 4, 4,0.001,10);
-            Assert.Throws<SpiralException>(() =>
+            var spiral = new Spiral(new Point(2, 2), 4, 4, 0.001, 10);
+            Assert.Throws<IndexOutOfRangeException>(() =>
             {
                 while (spiral.CurrentRadius <= spiral.MaxRadius)
                 {
@@ -20,21 +20,6 @@ namespace TagsCloudVisualization
                 }
                 spiral.GetNextPoint();
             });
-        }
-
-
-        private static readonly TestCaseData[] RadiusData =
-        {
-            new TestCaseData(new Point(3, 4), 6, 8).Returns(5),
-            new TestCaseData(new Point(0, 0), 6, 8).Returns(10),
-            new TestCaseData(new Point(3, 0), 4, 4).Returns(5),
-        };
-
-        [TestCaseSource(nameof(RadiusData))]
-        public double FindMaxRadius(Point center, int width, int height)
-        {
-            var spiral = new Spiral(center, width, height,0.001,10);
-            return spiral.MaxRadius;
         }
 
         [Test]
@@ -61,6 +46,5 @@ namespace TagsCloudVisualization
             //450 градусов => радиус примерно 450*(0.01+0.001*45) = 25
             pointsOfSpiral.Should().Contain(new Point(centerPoint.X, centerPoint.Y + 25));
         }
-
     }
 }
