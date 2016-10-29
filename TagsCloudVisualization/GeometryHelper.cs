@@ -30,5 +30,20 @@ namespace TagsCloudVisualization
         {
             return point.X < 0 || point.Y < 0 || point.X > width || point.Y > height;
         }
+
+
+        public static bool IsRectanglesIntersect(Rectangle r1, Rectangle r2)
+        {
+            //return r1.IntersectsWith(r2);
+            var intersection = Rectangle.Intersect(r1, r2);
+            return !(intersection.Width == 0 && intersection.Height == 0);
+        }
+
+
+        public static bool IsRectangleInsideOtherRectangle(Rectangle rectangle, int width, int height)
+        {
+            var intersection = Rectangle.Intersect(rectangle, new Rectangle(0, 0, width, height));
+            return intersection.Width == rectangle.Width && rectangle.Height == intersection.Height;
+        }
     }
 }

@@ -93,6 +93,7 @@ namespace TagsCloudVisualization.Tests
             Assert.Throws<IndexOutOfRangeException>(() => { cloud.PutNextRectangle(new Size(80, 80)); });
         }
 
+
         [Test]
         public void shiftRectangleToCenter()
         {

@@ -42,5 +42,44 @@ namespace TagsCloudVisualization.Tests
         {
             Assert.That(GeometryHelper.IsIncorrectPoint(new Point(x, y), 100, 100));
         }
+
+
+        private static readonly TestCaseData[] IntersectionRectanglesCases =
+       {
+            new TestCaseData(new Rectangle(new Point(0, 0), new Size(10, 10)),
+                new Rectangle(new Point(5, 5), new Size(10, 10))).Returns(true).SetName("one intersects other"),
+            new TestCaseData(new Rectangle(new Point(0, 0), new Size(10, 10)),
+                new Rectangle(new Point(20, 20), new Size(10, 10))).Returns(false)
+                .SetName("rectangles do not intersect"),
+            new TestCaseData(new Rectangle(new Point(0, 0), new Size(10, 10)),
+                new Rectangle(new Point(10, 10), new Size(10, 10))).Returns(false)
+                .SetName("rectangles do not intersect when upper left corner equal to lower left corner other"),
+            new TestCaseData(new Rectangle(new Point(0, 0), new Size(10, 10)),
+                new Rectangle(new Point(10, 5), new Size(10, 10))).Returns(true)
+                .SetName("one intersects other at border"),
+            new TestCaseData(new Rectangle(new Point(0, 0), new Size(10, 10)),
+                new Rectangle(new Point(2, 2), new Size(2, 2))).Returns(true).SetName("one inside other")
+        };
+
+        [TestCaseSource(nameof(IntersectionRectanglesCases))]
+        public bool rightСheckRectanglesAtIntersection(Rectangle r1, Rectangle r2)
+        {
+            return GeometryHelper.IsRectanglesIntersect(r1, r2);
+        }
+
+        private static readonly TestCaseData[] RectangleInsideOtherRectangleCases =
+        {
+            new TestCaseData(new Rectangle(5, 5, 50, 50), 100, 100).Returns(true),
+            new TestCaseData(new Rectangle(0, 0, 50, 50), 100, 100).Returns(true),
+            new TestCaseData(new Rectangle(0, 0, 100, 100), 100, 100).Returns(true),
+            new TestCaseData(new Rectangle(0, 0, 120, 10), 100, 100).Returns(false),
+            new TestCaseData(new Rectangle(0, 0, 120, 100), 100, 100).Returns(false)
+        };
+
+        [TestCaseSource(nameof(RectangleInsideOtherRectangleCases))]
+        public bool rightCheckThatRectagleInOtherRectangle(Rectangle rectangle, int width, int height)
+        {
+            return GeometryHelper.IsRectangleInsideOtherRectangle(rectangle, width, height);
+        }
     }
 }

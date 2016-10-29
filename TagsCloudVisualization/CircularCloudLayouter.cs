@@ -47,19 +47,64 @@ namespace TagsCloudVisualization
                 var currentRectangle = new Rectangle(nextPoint, rectangleSize);
                 if (IsPossiblePutRectangle(currentRectangle))
                 {
-                    currentRectangle = RectangleHelper.ShiftRectangleToCenter(currentRectangle, CenterPoint, Rectangles);
+                    currentRectangle = ShiftRectangleToCenter(currentRectangle);
                     Rectangles.Add(currentRectangle);
                     return currentRectangle;
                 }
             }
         }
 
+        public bool IsRectangleDoesNotIntersectsWithRectanglesFromCloud(Rectangle currentRectangle)
+        {
+            foreach (var existingRectangle in Rectangles)
+            {
+                if (GeometryHelper.IsRectanglesIntersect(currentRectangle, existingRectangle))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
         private bool IsPossiblePutRectangle(Rectangle currentRectangle)
         {
-            return RectangleHelper.IsRectangleDoesNotIntersectsWithRectangles(currentRectangle, Rectangles) &&
-                   RectangleHelper.IsRectangleInsideOtherRectangle(currentRectangle, Width, Height);
+            return IsRectangleDoesNotIntersectsWithRectanglesFromCloud(currentRectangle) &&
+                   GeometryHelper.IsRectangleInsideOtherRectangle(currentRectangle, Width, Height);
         }
 
+        public Rectangle ShiftRectangleToCenter(Rectangle currentRectangle)
+        {
+            currentRectangle = ShiftOn(currentRectangle, true);
+            currentRectangle = ShiftOn(currentRectangle, false);
+            return currentRectangle;
+        }
+
+        private Rectangle ShiftOn(Rectangle rectangle, bool isXCoordinate)
+        {
+            var currentCoordinate = isXCoordinate ? rectangle.X : rectangle.Y;
+            var centerCoordinate = isXCoordinate ? CenterPoint.X : CenterPoint.Y;
+            var step = currentCoordinate > centerCoordinate ? -1 : 1;
+            while (IsRectangleDoesNotIntersectsWithRectanglesFromCloud(rectangle) && currentCoordinate!=centerCoordinate)
+            {
+                currentCoordinate += step;
+                rectangle = MakeShift(rectangle, step, isXCoordinate);
+            }
+            rectangle = MakeShift(rectangle, -step, isXCoordinate);
+            return rectangle;
+
+        }
+
+        private Rectangle MakeShift(Rectangle rectangle, int step, bool isXCoordinate)
+        {
+            if (isXCoordinate)
+            {
+                rectangle.X += step;
+            }
+            else
+            {
+                rectangle.Y += step;
+            }
+            return rectangle;
+        }
 
         public void CreateBitmap(string path)
         {
@@ -68,8 +113,17 @@ namespace TagsCloudVisualization
             foreach (var rectangle in Rectangles)
             {
                 graphics.FillRectangle(Brushes.Blue, rectangle);
+                //graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+                //StringFormat sf = new StringFormat();
+                //sf.Alignment = StringAlignment.Center;
+                //sf.LineAlignment = StringAlignment.Center;
+                //graphics.DrawString("Текст по центру", new Font("Times", 15), Brushes.White, rectangle, sf);
             }
             bitmap.Save(path);
         }
+
+        
+
+
     }
 }
